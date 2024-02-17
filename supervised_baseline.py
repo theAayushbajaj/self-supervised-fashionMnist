@@ -6,8 +6,13 @@ import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+import logging
+
+# Setup logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+logging.info(f'Using device: {device}')
 
 class FashionMNISTClassifier(nn.Module):
     def __init__(self):
@@ -29,11 +34,11 @@ class FashionMNISTClassifier(nn.Module):
         return x
 
 class Trainer:
-    def __init__(self, train_loader, epochs):
+    def __init__(self, train_loader, validation_loader, epochs):
         self.train_loader = train_loader
         self.validation_loader = validation_loader
         self.epochs = epochs
-        self.model = FashionMNISTClassifier()
+        self.model = FashionMNISTClassifier().to(device)
         self.loss_fn = nn.CrossEntropyLoss()
         self.optimizer = optim.SGD(self.model.parameters(), lr=0.001, momentum=0.9)
         self.train_losses = []
@@ -42,12 +47,13 @@ class Trainer:
         self.validation_accuracy = []
 
     def train_one_epoch(self):
+        self.model.train()  # Set model to training mode
         running_loss = 0.0
         correct = 0
         total = 0
         for i, data in enumerate(self.train_loader, 0):
             inputs, labels = data
-            inputs, labels = inputs.to('device'), labels.to('device')
+            inputs, labels = inputs.to(device), labels.to(device)
             self.optimizer.zero_grad()
             outputs = self.model(inputs)
             loss = self.loss_fn(outputs, labels)
@@ -63,14 +69,17 @@ class Trainer:
         accuracy = 100 * correct / total
         self.train_losses.append(avg_loss)
         self.train_accuracy.append(accuracy)
+        logging.info(f'Train Loss: {avg_loss:.4f}, Train Accuracy: {accuracy:.2f}%')
 
     def validate(self):
+        self.model.eval()  # Set model to evaluation mode
         running_loss = 0.0
         correct = 0
         total = 0
         with torch.no_grad():
             for data in self.validation_loader:
                 images, labels = data
+                images, labels = images.to(device), labels.to(device)
                 outputs = self.model(images)
                 loss = self.loss_fn(outputs, labels)
                 running_loss += loss.item()
@@ -82,22 +91,22 @@ class Trainer:
         accuracy = 100 * correct / total
         self.validation_losses.append(avg_loss)
         self.validation_accuracy.append(accuracy)
+        logging.info(f'Validation Loss: {avg_loss:.4f}, Validation Accuracy: {accuracy:.2f}%')
 
     def train(self):
         for epoch in range(self.epochs):
-            self.model.train()
+            logging.info(f'Starting Epoch {epoch+1}/{self.epochs}')
             self.train_one_epoch()
-            self.model.eval()
             self.validate()
-            print(f'Epoch {epoch+1}, Train Loss: {self.train_losses[-1]}, Train Accuracy: {self.train_accuracy[-1]}, Validation Loss: {self.validation_losses[-1]}, Validation Accuracy: {self.validation_accuracy[-1]}')
 
     def plot_metrics(self, filename='training_validation_metrics.png'):
+        epochs = range(1, self.epochs + 1)
         plt.figure(figsize=(12, 6))
-        
+
         # Plot Training and Validation Loss
         plt.subplot(1, 2, 1)
-        plt.plot(self.epochs, self.train_losses, 'r-', label='Training Loss')
-        plt.plot(self.epochs, self.validation_losses, 'b-', label='Validation Loss')
+        plt.plot(epochs, self.train_losses, 'r-', label='Training Loss')
+        plt.plot(epochs, self.validation_losses, 'b-', label='Validation Loss')
         plt.title('Training and Validation Loss')
         plt.xlabel('Epochs')
         plt.ylabel('Loss')
@@ -105,18 +114,16 @@ class Trainer:
 
         # Plot Training and Validation Accuracy
         plt.subplot(1, 2, 2)
-        plt.plot(self.epochs, self.train_accuracy, 'r-', label='Training Accuracy')
-        plt.plot(self.epochs, self.validation_accuracy, 'b-', label='Validation Accuracy')
+        plt.plot(epochs, self.train_accuracy, 'r-', label='Training Accuracy')
+        plt.plot(epochs, self.validation_accuracy, 'b-', label='Validation Accuracy')
         plt.title('Training and Validation Accuracy')
         plt.xlabel('Epochs')
         plt.ylabel('Accuracy')
         plt.legend()
 
-        # Save the figure
-        plt.tight_layout()  # Adjust subplots to fit into figure area.
+        plt.tight_layout()
         plt.savefig(filename)
-        plt.close()  # Close the figure to free up memory
-
+        plt.close()
 
 if __name__ == '__main__':
     # Data preprocessing
@@ -133,8 +140,8 @@ if __name__ == '__main__':
     validation_loader = torch.utils.data.DataLoader(validation_set, batch_size=4, shuffle=False)
 
     # Initialize our trainer and start training
-    trainer = FashionMNISTClassifier(train_loader = train_loader, 
-                                     validation_loader = validation_loader,
-                                     epochs = 5)
+    trainer = Trainer(train_loader=train_loader, 
+                      validation_loader=validation_loader, 
+                      epochs=5)
     trainer.train()  # Train for 5 epochs
-    trainer.plot_metrics()  # Plot the training and validation loss and accuracy
+    trainer.plot_metrics('training_validation_metrics.png')  # Plot and save the training and validation loss and accuracy
