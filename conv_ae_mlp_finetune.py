@@ -3,12 +3,12 @@ from torch import nn, optim
 import torchvision
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
-import logging
+
 from utils import create_subset
 import matplotlib.pyplot as plt
+from barbar import Bar
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class ConvAutoencoder(nn.Module):
     def __init__(self):
@@ -41,7 +41,7 @@ class ConvEncoderClassifier(nn.Module):
         super(ConvEncoderClassifier, self).__init__()
         self.encoder = encoder
         for param in self.encoder.parameters():
-            param.requires_grad = False  # Freeze the encoder
+            param.requires_grad = False
         
         # Assuming encoder output is 64-dimensional
         self.classifier = nn.Sequential(
@@ -53,7 +53,7 @@ class ConvEncoderClassifier(nn.Module):
 
     def forward(self, x):
         x = self.encoder(x)  # Encoded representations
-        x = torch.flatten(x, 1)  # Flatten the output for the classifier
+        x = torch.flatten(x, 1) 
         x = self.classifier(x)
         return x
 
@@ -73,7 +73,7 @@ class AutoencoderTrainer:
     def train_epoch(self):
         self.model.train()
         total_loss = 0
-        for data, _ in self.train_loader:
+        for data, _ in Bar(self.train_loader):
             data = data.to(self.device)
             self.optimizer.zero_grad()
             output = self.model(data)
@@ -83,7 +83,7 @@ class AutoencoderTrainer:
             total_loss += loss.item()
         avg_loss = total_loss / len(self.train_loader)
         self.train_losses.append(avg_loss)
-        logging.info(f'Training Loss: {avg_loss:.4f}')
+        print(f'Training Loss: {avg_loss:.4f}')
 
     def validate(self):
         self.model.eval()
@@ -96,11 +96,11 @@ class AutoencoderTrainer:
                 total_loss += loss.item()
         avg_loss = total_loss / len(self.val_loader)
         self.val_losses.append(avg_loss)
-        logging.info(f'Validation Loss: {avg_loss:.4f}')
+        print(f'Validation Loss: {avg_loss:.4f}')
 
     def train(self):
         for epoch in range(self.epochs):
-            logging.info(f'Epoch {epoch + 1}/{self.epochs}')
+            print(f'Epoch {epoch + 1}/{self.epochs}')
             self.train_epoch()
             self.validate()
 
@@ -134,7 +134,7 @@ class ClassifierTrainer:
         total_loss = 0
         correct = 0
         total = 0
-        for data, labels in self.train_loader:
+        for data, labels in Bar(self.train_loader):
             data, labels = data.to(self.device), labels.to(self.device)
             self.optimizer.zero_grad()
             outputs = self.model(data)
@@ -149,7 +149,7 @@ class ClassifierTrainer:
         accuracy = 100 * correct / total
         self.train_losses.append(avg_loss)
         self.train_accuracy.append(accuracy)
-        logging.info(f'Train Loss: {avg_loss:.4f}, Accuracy: {accuracy:.2f}%')
+        print(f'Train Loss: {avg_loss:.4f}, Accuracy: {accuracy:.2f}%')
 
     def validate(self):
         self.model.eval()
@@ -157,7 +157,7 @@ class ClassifierTrainer:
         correct = 0
         total = 0
         with torch.no_grad():
-            for data, labels in self.val_loader:
+            for data, labels in Bar(self.val_loader):
                 data, labels = data.to(self.device), labels.to(self.device)
                 outputs = self.model(data)
                 loss = self.loss_fn(outputs, labels)
@@ -169,13 +169,13 @@ class ClassifierTrainer:
         accuracy = 100 * correct / total
         self.val_losses.append(avg_loss)
         self.val_accuracy.append(accuracy)
-        logging.info(f'Validation Loss: {avg_loss:.4f}, Accuracy: {accuracy:.2f}%')
+        print(f'Validation Loss: {avg_loss:.4f}, Accuracy: {accuracy:.2f}%')
 
     def train(self):
         for epoch in range(self.epochs):
-            logging.info(f'Epoch {epoch + 1}/{self.epochs} - Training')
+            print(f'Epoch {epoch + 1}/{self.epochs} - Training')
             self.train_epoch()
-            logging.info(f'Epoch {epoch + 1}/{self.epochs} - Validation')
+            print(f'Epoch {epoch + 1}/{self.epochs} - Validation')
             self.validate()
 
     def plot_metrics(self, filename='conv_ae_mlp_metrics.png'):
@@ -211,8 +211,8 @@ if __name__ == "__main__":
     training_set = torchvision.datasets.FashionMNIST('./data', train=True, download=True, transform=transform)
     validation_set = torchvision.datasets.FashionMNIST('./data', train=False, download=True, transform=transform)
 
-    train_loader = torch.utils.data.DataLoader(training_set, batch_size=64, shuffle=True)
-    validation_loader = torch.utils.data.DataLoader(validation_set, batch_size=64, shuffle=False)
+    train_loader = DataLoader(training_set, batch_size=64, shuffle=True)
+    validation_loader = DataLoader(validation_set, batch_size=64, shuffle=False)
 
     # Train the autoencoder
     autoencoder = ConvAutoencoder().to(device)

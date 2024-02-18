@@ -1,18 +1,21 @@
 import torch
 import torchvision
 import torchvision.transforms as transforms
-import matplotlib.pyplot as plt
-import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-import logging
 
-# Setup logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
+from barbar import Bar
+
+import os
+
+if not os.path.exists('assets'):
+    os.makedirs('assets')
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-logging.info(f'Using device: {device}')
 
 class FashionMNISTClassifier(nn.Module):
     def __init__(self):
@@ -51,7 +54,7 @@ class Trainer:
         running_loss = 0.0
         correct = 0
         total = 0
-        for i, data in enumerate(self.train_loader, 0):
+        for i, data in enumerate(Bar(self.train_loader, 0)):
             inputs, labels = data
             inputs, labels = inputs.to(device), labels.to(device)
             self.optimizer.zero_grad()
@@ -69,15 +72,17 @@ class Trainer:
         accuracy = 100 * correct / total
         self.train_losses.append(avg_loss)
         self.train_accuracy.append(accuracy)
-        logging.info(f'Train Loss: {avg_loss:.4f}, Train Accuracy: {accuracy:.2f}%')
+        print(f'Train Loss: {avg_loss:.4f}, Train Accuracy: {accuracy:.2f}%')
 
     def validate(self):
-        self.model.eval()  # Set model to evaluation mode
+        self.model.eval()
         running_loss = 0.0
         correct = 0
         total = 0
+        all_predicted = []
+        all_labels = []
         with torch.no_grad():
-            for data in self.validation_loader:
+            for data in Bar(self.validation_loader):
                 images, labels = data
                 images, labels = images.to(device), labels.to(device)
                 outputs = self.model(images)
@@ -86,20 +91,26 @@ class Trainer:
                 _, predicted = torch.max(outputs.data, 1)
                 total += labels.size(0)
                 correct += (predicted == labels).sum().item()
+                all_predicted.extend(predicted.cpu().numpy())
+                all_labels.extend(labels.cpu().numpy())
 
         avg_loss = running_loss / len(self.validation_loader)
         accuracy = 100 * correct / total
         self.validation_losses.append(avg_loss)
         self.validation_accuracy.append(accuracy)
-        logging.info(f'Validation Loss: {avg_loss:.4f}, Validation Accuracy: {accuracy:.2f}%')
+        print(f'Validation Loss: {avg_loss:.4f}, Validation Accuracy: {accuracy:.2f}%')
+        
+        # Save all_labels and all_predicted to use in the confusion matrix
+        self.all_labels = all_labels
+        self.all_predicted = all_predicted
 
     def train(self):
         for epoch in range(self.epochs):
-            logging.info(f'Starting Epoch {epoch+1}/{self.epochs}')
+            print(f'Starting Epoch {epoch+1}/{self.epochs}')
             self.train_one_epoch()
             self.validate()
 
-    def plot_metrics(self, filename='training_validation_metrics.png'):
+    def plot_metrics(self, filename='assets/train_val_metrics.png'):
         epochs = range(1, self.epochs + 1)
         plt.figure(figsize=(12, 6))
 
@@ -125,6 +136,18 @@ class Trainer:
         plt.savefig(filename)
         plt.close()
 
+
+    def plot_confusion_matrix(self, filename='assets/baseline_confusion_matrix.png'):
+        cm = confusion_matrix(self.all_labels, self.all_predicted)
+        plt.figure(figsize=(10, 10))
+        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
+        plt.title('Confusion Matrix')
+        plt.xlabel('Predicted Labels')
+        plt.ylabel('True Labels')
+        plt.show()
+        plt.savefig(filename)
+
+
 if __name__ == '__main__':
     # Data preprocessing
     transform = transforms.Compose([
@@ -145,3 +168,4 @@ if __name__ == '__main__':
                       epochs=5)
     trainer.train()  # Train for 5 epochs
     trainer.plot_metrics('baseline_metrics.png')  # Plot and save the training and validation loss and accuracy
+    trainer.plot_confusion_matrix()  # Plot and save the confusion matrix
