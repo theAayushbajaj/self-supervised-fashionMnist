@@ -158,7 +158,7 @@ if __name__ == "__main__":
     train_loader = torch.utils.data.DataLoader(training_set, batch_size=64, shuffle=True)
     validation_loader = torch.utils.data.DataLoader(validation_set, batch_size=64, shuffle=False)
 
-    trainer = VAETrainer(train_loader, validation_loader, batch_size=64, lr=1e-3, z_dim=10)
+    trainer = VAETrainer(train_loader, validation_loader, lr=1e-3, z_dim=10)
     trainer.train(epochs=2)
 
 
