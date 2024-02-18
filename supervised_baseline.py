@@ -136,12 +136,12 @@ if __name__ == '__main__':
     training_set = torchvision.datasets.FashionMNIST('./data', train=True, download=True, transform=transform)
     validation_set = torchvision.datasets.FashionMNIST('./data', train=False, download=True, transform=transform)
 
-    train_loader = torch.utils.data.DataLoader(training_set, batch_size=4, shuffle=True)
-    validation_loader = torch.utils.data.DataLoader(validation_set, batch_size=4, shuffle=False)
+    train_loader = torch.utils.data.DataLoader(training_set, batch_size=64, shuffle=True)
+    validation_loader = torch.utils.data.DataLoader(validation_set, batch_size=64, shuffle=False)
 
     # Initialize our trainer and start training
     trainer = Trainer(train_loader=train_loader, 
                       validation_loader=validation_loader, 
                       epochs=5)
     trainer.train()  # Train for 5 epochs
-    trainer.plot_metrics('training_validation_metrics.png')  # Plot and save the training and validation loss and accuracy
+    trainer.plot_metrics('baseline_metrics.png')  # Plot and save the training and validation loss and accuracy
