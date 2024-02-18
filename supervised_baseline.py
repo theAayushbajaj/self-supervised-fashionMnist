@@ -54,7 +54,7 @@ class Trainer:
         running_loss = 0.0
         correct = 0
         total = 0
-        for i, data in enumerate(Bar(self.train_loader, 0)):
+        for i, data in enumerate(Bar(self.train_loader)):
             inputs, labels = data
             inputs, labels = inputs.to(device), labels.to(device)
             self.optimizer.zero_grad()
