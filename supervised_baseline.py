@@ -7,9 +7,10 @@ import torch.optim as optim
 
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
+from sklearn.metrics import classification_report
 import seaborn as sns
 from barbar import Bar
-
+import json
 import os
 
 if not os.path.exists('assets'):
@@ -79,8 +80,7 @@ class Trainer:
         running_loss = 0.0
         correct = 0
         total = 0
-        all_predicted = []
-        all_labels = []
+
         with torch.no_grad():
             for data in Bar(self.validation_loader):
                 images, labels = data
@@ -91,18 +91,13 @@ class Trainer:
                 _, predicted = torch.max(outputs.data, 1)
                 total += labels.size(0)
                 correct += (predicted == labels).sum().item()
-                all_predicted.extend(predicted.cpu().numpy())
-                all_labels.extend(labels.cpu().numpy())
 
         avg_loss = running_loss / len(self.validation_loader)
         accuracy = 100 * correct / total
         self.validation_losses.append(avg_loss)
         self.validation_accuracy.append(accuracy)
         print(f'Validation Loss: {avg_loss:.4f}, Validation Accuracy: {accuracy:.2f}%')
-        
-        # Save all_labels and all_predicted to use in the confusion matrix
-        self.all_labels = all_labels
-        self.all_predicted = all_predicted
+    
 
     def train(self):
         for epoch in range(self.epochs):
@@ -137,17 +132,6 @@ class Trainer:
         plt.close()
 
 
-    def plot_confusion_matrix(self, filename='assets/baseline_confusion_matrix.png'):
-        cm = confusion_matrix(self.all_labels, self.all_predicted)
-        plt.figure(figsize=(10, 10))
-        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
-        plt.title('Confusion Matrix')
-        plt.xlabel('Predicted Labels')
-        plt.ylabel('True Labels')
-        plt.show()
-        plt.savefig(filename)
-
-
 if __name__ == '__main__':
     # Data preprocessing
     transform = transforms.Compose([
@@ -165,7 +149,7 @@ if __name__ == '__main__':
     # Initialize our trainer and start training
     trainer = Trainer(train_loader=train_loader, 
                       validation_loader=validation_loader, 
-                      epochs=5)
+                      epochs=20)
     trainer.train()  # Train for 5 epochs
     trainer.plot_metrics('baseline_metrics.png')  # Plot and save the training and validation loss and accuracy
     trainer.plot_confusion_matrix()  # Plot and save the confusion matrix

@@ -8,6 +8,9 @@ from utils import create_subset
 import matplotlib.pyplot as plt
 from barbar import Bar
 
+import os
+if not os.path.exists('assets'):
+    os.makedirs('assets')
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 class ConvAutoencoder(nn.Module):
@@ -178,7 +181,7 @@ class ClassifierTrainer:
             print(f'Epoch {epoch + 1}/{self.epochs} - Validation')
             self.validate()
 
-    def plot_metrics(self, filename='conv_ae_mlp_metrics.png'):
+    def plot_metrics(self, filename='assets/conv_ae_mlp_metrics.png'):
         plt.figure(figsize=(12, 5))
         plt.subplot(1, 2, 1)
         plt.plot(self.train_losses, label='Train Loss')

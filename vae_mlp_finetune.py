@@ -159,7 +159,7 @@ if __name__ == "__main__":
     validation_loader = torch.utils.data.DataLoader(validation_set, batch_size=64, shuffle=False)
 
     trainer = VAETrainer(train_loader, validation_loader, lr=1e-3, z_dim=10)
-    trainer.train(epochs=2)
+    trainer.train(epochs=20)
 
 
     # Assuming you've already loaded the full FashionMNIST training dataset as `training_set`
@@ -171,7 +171,7 @@ if __name__ == "__main__":
     # train classifier while freezing the encoder
     encoder = trainer.model.encoder
     classifier_trainer = ClassifierTrainer(train_loader, validation_loader, encoder, z_dim=10, hidden_dim=100, output_dim=10)
-    classifier_trainer.train(epochs=2)
+    classifier_trainer.train(epochs=20)
     classifier_trainer.plot_metrics('vae_mlp_classifier_metrics.png')
 
     
