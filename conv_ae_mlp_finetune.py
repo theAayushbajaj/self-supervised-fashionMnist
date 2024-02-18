@@ -59,13 +59,14 @@ class ConvEncoderClassifier(nn.Module):
 
 
 class AutoencoderTrainer:
-    def __init__(self, model, train_loader, val_loader, device):
+    def __init__(self, model, train_loader, val_loader, epochs):
         self.model = model.to(device)
         self.train_loader = train_loader
         self.val_loader = val_loader
         self.device = device
         self.optimizer = optim.Adam(self.model.parameters(), lr=1e-3)
         self.loss_fn = nn.MSELoss()
+        self.epochs = epochs
         self.train_losses = []
         self.val_losses = []
 
@@ -97,9 +98,9 @@ class AutoencoderTrainer:
         self.val_losses.append(avg_loss)
         logging.info(f'Validation Loss: {avg_loss:.4f}')
 
-    def train(self, epochs):
-        for epoch in range(epochs):
-            logging.info(f'Epoch {epoch + 1}/{epochs}')
+    def train(self):
+        for epoch in range(self.epochs):
+            logging.info(f'Epoch {epoch + 1}/{self.epochs}')
             self.train_epoch()
             self.validate()
 
@@ -115,13 +116,14 @@ class AutoencoderTrainer:
 
 
 class ClassifierTrainer:
-    def __init__(self, model, train_loader, val_loader, device):
+    def __init__(self, model, train_loader, val_loader,epochs=10):
         self.model = model.to(device)
         self.train_loader = train_loader
         self.val_loader = val_loader
         self.device = device
         self.optimizer = optim.Adam(filter(lambda p: p.requires_grad, self.model.parameters()), lr=1e-3)
         self.loss_fn = nn.CrossEntropyLoss()
+        self.epochs = epochs
         self.train_losses = []
         self.val_losses = []
         self.train_accuracy = []
@@ -169,11 +171,11 @@ class ClassifierTrainer:
         self.val_accuracy.append(accuracy)
         logging.info(f'Validation Loss: {avg_loss:.4f}, Accuracy: {accuracy:.2f}%')
 
-    def train(self, epochs):
-        for epoch in range(epochs):
-            logging.info(f'Epoch {epoch + 1}/{epochs} - Training')
+    def train(self):
+        for epoch in range(self.epochs):
+            logging.info(f'Epoch {epoch + 1}/{self.epochs} - Training')
             self.train_epoch()
-            logging.info(f'Epoch {epoch + 1}/{epochs} - Validation')
+            logging.info(f'Epoch {epoch + 1}/{self.epochs} - Validation')
             self.validate()
 
     def plot_metrics(self, filename='conv_ae_mlp_metrics.png'):
@@ -214,8 +216,8 @@ if __name__ == "__main__":
 
     # Train the autoencoder
     autoencoder = ConvAutoencoder().to(device)
-    autoencoder_trainer = AutoencoderTrainer(autoencoder, train_loader, device)
-    autoencoder_trainer.train(epochs=10)
+    autoencoder_trainer = AutoencoderTrainer(autoencoder, train_loader, validation_loader,epochs=10)
+    autoencoder_trainer.train()
 
     # Assuming the classifier is set up properly to use the encoded features
     # Train the classifier
@@ -225,6 +227,6 @@ if __name__ == "__main__":
     train_loader = torch.utils.data.DataLoader(subset_training_set, batch_size=64, shuffle=True)
 
     classifier = ConvEncoderClassifier(autoencoder.encoder, num_classes=10)
-    classifier_trainer = ClassifierTrainer(classifier, train_loader, device, epochs=10)
+    classifier_trainer = ClassifierTrainer(classifier, train_loader, validation_loader, epochs=10)
     classifier_trainer.train()
     classifier_trainer.plot_metrics()
