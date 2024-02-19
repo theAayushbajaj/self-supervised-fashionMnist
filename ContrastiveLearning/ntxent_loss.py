@@ -23,7 +23,8 @@ class NTXentLoss(nn.Module):
         labels = torch.cat([torch.arange(self.batch_size) for _ in range(2)], dim=0)
         #labels = (labels + self.batch_size) % (2 * self.batch_size)
         labels = labels.to(self.device)
-
+        
+        sim_matrix = torch.cat((sim_matrix, sim_matrix), dim=1)
         # Compute cross-entropy loss
         loss = self.criterion(sim_matrix, labels)
         return loss / (2 * self.batch_size)
