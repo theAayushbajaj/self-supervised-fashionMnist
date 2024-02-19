@@ -47,7 +47,7 @@ class SimCLREncoderClassifier(nn.Module):
             param.requires_grad = False
 
         # Assuming the feature dimension from the encoder
-        feature_dim = simclr_model.projection_head.fc.in_features
+        feature_dim = simclr_model.resnet.fc.in_features
 
         # Classification head
         self.classifier = nn.Sequential(
@@ -58,6 +58,7 @@ class SimCLREncoderClassifier(nn.Module):
 
     def forward(self, x):
         features = self.simclr_encoder(x)
+        features = torch.flatten(features, 1)
         return self.classifier(features)
 
     
