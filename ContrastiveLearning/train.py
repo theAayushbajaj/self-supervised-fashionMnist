@@ -32,12 +32,12 @@ def train(model, train_loader, optimizer, loss_fn, epochs, device):
     for epoch in range(epochs):
         model.train()
         total_loss = 0
-        for (x_i, x_j), _ in tqdm(train_loader, desc=f'Epoch {epoch+1}/{epochs}', unit='batch'):
-            x_i, x_j = x_i.to(device), x_j.to(device)
+        for (images), _ in tqdm(train_loader, desc=f'Epoch {epoch+1}/{epochs}', unit='batch'):
+            images = torch.cat(images, dim=0)
+            images = images.to(device)
 
-            # Forward pass
-            z_i, z_j = model(x_i, x_j)
-            loss = loss_fn(z_i, z_j)
+            features = model(images)
+            loss = loss_fn(features)
 
             # Backward pass
             optimizer.zero_grad()

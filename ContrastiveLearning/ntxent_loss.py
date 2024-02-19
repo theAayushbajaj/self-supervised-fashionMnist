@@ -30,14 +30,13 @@ class NTXentLoss(nn.Module):
     #     loss = self.criterion(sim_matrix, labels)
     #     return loss / (2 * self.batch_size)
     
-    def forward(self, z_i, z_j):
+    def forward(self, features):
 
         labels = torch.cat([torch.arange(self.batch_size) for _ in range(2)], dim=0)
         labels = (labels.unsqueeze(0) == labels.unsqueeze(1)).float()
         labels = labels.to(self.device)
 
-        z = torch.cat((z_i, z_j), dim=0)
-        z_norm = F.normalize(z, dim=1)
+        z_norm = F.normalize(features, dim=1)
 
         similarity_matrix = torch.matmul(z_norm, z_norm.T)
 
