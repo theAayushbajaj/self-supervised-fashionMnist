@@ -3,22 +3,31 @@ import numpy as np
 
 import torch
 import torch.nn as nn
+import torch.optim as optim
 import torch.nn.functional as F
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 from torchvision import datasets
-from tqdm import tqdm
+from torch.utils.data.dataset import Subset
 
+from tqdm import tqdm
+import matplotlib.pyplot as plt
 from ntxent_loss import NTXentLoss
 from resnet_simclr import ResNetSimCLR
+
+torch.manual_seed(42)
+np.random.seed(42)
+random.seed(42)
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class SimCLRTransform:
     def __init__(self):
         self.transform = transforms.Compose([
-            transforms.RandomResizedCrop(size=28),
+            transforms.RandomResizedCrop(size=28), # recommend to stand out in SimCLR paper 
             transforms.RandomHorizontalFlip(),
             transforms.RandomApply([
-                transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.1)
+                transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.1) # recommend to stand out in SimCLR paper 
             ], p=0.8),
             #GaussianBlur(kernel_size=int(0.1 * 32)),
             transforms.ToTensor(),
@@ -28,49 +37,164 @@ class SimCLRTransform:
     def __call__(self, x):
         return self.transform(x), self.transform(x)
 
-def train(model, train_loader, optimizer, loss_fn, epochs, device):
-    for epoch in range(epochs):
-        model.train()
+
+class SimCLREncoderClassifier(nn.Module):
+    def __init__(self, simclr_model, num_classes=10):
+        super(SimCLREncoderClassifier, self).__init__()
+        self.simclr_encoder = simclr_model.resnet 
+        for param in self.simclr_encoder.parameters():
+            param.requires_grad = False
+
+        # Assuming the feature dimension from the encoder
+        feature_dim = simclr_model.resnet.fc.in_features
+
+        # Classification head
+        self.classifier = nn.Sequential(
+            nn.Linear(feature_dim, 128),
+            nn.ReLU(),
+            nn.Linear(128, num_classes)
+        )
+
+    def forward(self, x):
+        features = self.simclr_encoder(x)
+        return self.classifier(features)
+
+    
+class SimCLRTrainer:
+    def __init__(self, model, train_loader, optimizer, loss_fn, epochs, device):
+        self.model = model
+        self.train_loader = train_loader
+        self.optimizer = optimizer
+        self.loss_fn = loss_fn
+        self.epochs = epochs
+        self.device = device
+
+    def train_epoch(self):
+        self.model.train()
         total_loss = 0
-        for (x_i, x_j), _ in tqdm(train_loader, desc=f'Epoch {epoch+1}/{epochs}', unit='batch'):
-            x_i, x_j = x_i.to(device), x_j.to(device)
-
-            # Forward pass
-            z_i, z_j = model(x_i, x_j)
-            loss = loss_fn(z_i, z_j)
-
-            # Backward pass
-            optimizer.zero_grad()
+        for (x_i, x_j), _ in tqdm(self.train_loader, desc="Training SimCLR", unit="batch"):
+            x_i, x_j = x_i.to(self.device), x_j.to(self.device)
+            z_i, z_j = self.model(x_i, x_j)
+            
+            loss = self.loss_fn(z_i, z_j)
+            self.optimizer.zero_grad()
+            
             loss.backward()
-            optimizer.step()
-
+            self.optimizer.step()
+            
             total_loss += loss.item()
-
-        avg_loss = total_loss / len(train_loader)
+        avg_loss = total_loss / len(self.train_loader)
         print(f'Average Loss: {avg_loss:.4f}')
 
-if __name__ == '__main__':
-    # Set random seeds and device
-    torch.manual_seed(42)
-    np.random.seed(42)
-    random.seed(42)
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    def train(self):
+        for epoch in range(self.epochs):
+            print(f'Epoch {epoch+1}/{self.epochs}')
+            self.train_epoch()
 
+class ClassifierTrainer:
+    def __init__(self, model, train_loader, val_loader, epochs, device):
+        self.model = model.to(device)
+        self.train_loader = train_loader
+        self.val_loader = val_loader
+        self.epochs = epochs
+        self.device = device
+        self.optimizer = optim.Adam(filter(lambda p: p.requires_grad, self.model.parameters()), lr=1e-3)
+        self.loss_fn = nn.CrossEntropyLoss()
+        self.train_losses = []
+        self.val_losses = []
+        self.train_accuracy = []
+        self.val_accuracy = []
 
+    def train_epoch(self):
+        self.model.train()
+        total_loss, total, correct = 0, 0, 0
+        for data, labels in tqdm(self.train_loader, desc="Training"):
+            data, labels = data.to(self.device), labels.to(self.device)
+            self.optimizer.zero_grad()
+            outputs = self.model(data)
+            loss = self.loss_fn(outputs, labels)
+            loss.backward()
+            self.optimizer.step()
+            total_loss += loss.item()
+            _, predicted = torch.max(outputs, 1)
+            correct += (predicted == labels).sum().item()
+            total += labels.size(0)
+        avg_loss = total_loss / len(self.train_loader)
+        accuracy = 100 * correct / total
+        self.train_losses.append(avg_loss)
+        self.train_accuracy.append(accuracy)
+        print(f'Train Loss: {avg_loss:.4f}, Accuracy: {accuracy:.2f}%')
+
+    def validate(self):
+        self.model.eval()
+        total_loss, total, correct = 0, 0, 0
+        with torch.no_grad():
+            for data, labels in tqdm(self.val_loader, desc="Validating"):
+                data, labels = data.to(self.device), labels.to(self.device)
+                outputs = self.model(data)
+                loss = self.loss_fn(outputs, labels)
+                total_loss += loss.item()
+                _, predicted = torch.max(outputs, 1)
+                correct += (predicted == labels).sum().item()
+                total += labels.size(0)
+        avg_loss = total_loss / len(self.val_loader)
+        accuracy = 100 * correct / total
+        self.val_losses.append(avg_loss)
+        self.val_accuracy.append(accuracy)
+        print(f'Validation Loss: {avg_loss:.4f}, Validation Accuracy: {accuracy:.2f}%')
+
+    def train(self):
+        for epoch in range(self.epochs):
+            print(f'Epoch {epoch + 1}/{self.epochs}')
+            self.train_epoch()
+            self.validate()
+        self.plot_metrics()
+
+    def plot_metrics(self,filename='../assets/SimCLR_training_validation_metrics.png'):
+        epochs_range = range(1, self.epochs + 1)
+        plt.figure(figsize=(12, 6))
+        
+        plt.subplot(1, 2, 1)
+        plt.plot(epochs_range, self.train_losses, label='Train Loss')
+        plt.plot(epochs_range, self.val_losses, label='Validation Loss')
+        plt.title('Loss')
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss')
+        plt.legend()
+        
+        plt.subplot(1, 2, 2)
+        plt.plot(epochs_range, self.train_accuracy, label='Train Accuracy')
+        plt.plot(epochs_range, self.val_accuracy, label='Validation Accuracy')
+        plt.title('Accuracy')
+        plt.xlabel('Epoch')
+        plt.ylabel('Accuracy (%)')
+        plt.legend()
+
+        plt.tight_layout()
+        plt.savefig(filename)
+        plt.show()
+
+if __name__ == "__main__":
+    # SimCLR model training setup
     train_dataset = datasets.FashionMNIST('./data', train=True, download=True, transform=SimCLRTransform())
     train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 
-    model = ResNetSimCLR(out_dim=512).to(device)
+    model_simclr = ResNetSimCLR(out_dim=512).to(device) 
+    optimizer_simclr = optim.Adam(model_simclr.parameters(), lr=3e-4)
+    loss_fn_simclr = NTXentLoss(batch_size=32, temperature=0.5, device=device)
 
-    loss_fn = NTXentLoss(batch_size=32, temperature=0.5, device=device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=3e-4)
+    simclr_trainer = SimCLRTrainer(model_simclr, train_loader, optimizer_simclr, loss_fn_simclr, epochs=2)
+    simclr_trainer.train()
 
-    # Train model
-    train(model, train_loader, optimizer, loss_fn, epochs=50, device=device)
+    subset_indices = torch.randperm(len(train_dataset))[:int(0.1 * len(train_dataset))]
+    subset_dataset = Subset(train_dataset, subset_indices)
+    train_loader_subset = DataLoader(subset_dataset, batch_size=64, shuffle=True)
 
-    # Save model
-    # save_checkpoint({
-    #     'epoch': 10,
-    #     'state_dict': model.state_dict(),
-    #     'optimizer': optimizer.state_dict(),
-    # }, is_best=True)
+    validation_dataset = datasets.FashionMNIST('./data', train=False, download=True, transform=transforms.ToTensor())
+    validation_loader = DataLoader(validation_dataset, batch_size=64, shuffle=False)
+
+    simclr_classifier = SimCLREncoderClassifier(model_simclr, num_classes=10).to(device)  # Assume this is defined correctly
+
+    classifier_trainer = ClassifierTrainer(simclr_classifier, train_loader_subset, validation_loader, epochs=2)
+    classifier_trainer.train()
+    classifier_trainer.plot_metrics()

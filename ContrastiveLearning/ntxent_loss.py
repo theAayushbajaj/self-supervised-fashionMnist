@@ -11,10 +11,9 @@ class NTXentLoss(nn.Module):
         self.criterion = nn.CrossEntropyLoss(reduction="sum")
 
     def forward(self, z_i, z_j):
-        N = z_i.size(0)  # Original batch size
+        N = z_i.size(0) 
         z = torch.cat((z_i, z_j), dim=0)  # Concatenated embeddings
 
-        # Compute similarity matrix
         z_norm = F.normalize(z, dim=1)
         sim_matrix = torch.mm(z_norm, z_norm.T) / self.temperature
 
@@ -25,51 +24,10 @@ class NTXentLoss(nn.Module):
         labels = torch.arange(2*N, device=self.device)
         labels = (labels + N) % (2*N)  # Shift labels to match positive pairs
 
-        # The logits are the similarity scores; targets are the indices of the positive pairs
         logits = sim_matrix
         loss = self.criterion(logits, labels)
 
-        return loss / (2 * N)  # Normalize by the effective batch size (2N)
-    
-    # def forward(self, z_i, z_j):
-    #     z = torch.cat((z_i, z_j), dim=0) 
-    #     N = 2 * self.batch_size  # Corrected size for 2N, Size for concatenated z_i and z_j
-
-    #     z_norm = F.normalize(z, dim=1)
-    #     sim_matrix = torch.mm(z_norm, z_norm.T) / self.temperature
-
-    #     # Create an identity mask to zero-out diagonals
-    #     sim_matrix.fill_diagonal_(-1e9)
-
-    #     labels = torch.arange(N, device=self.device)
-    #     labels = torch.cat((labels, labels), dim=0) % N
-
-    #     #sim_matrix = torch.cat((sim_matrix, sim_matrix), dim=1)
-        
-    #     loss = self.criterion(sim_matrix, labels)
-    #     return loss / (2 * self.batch_size)
-    
-    # def forward(self, z_i, z_j):
-    #     batch_size = z_i.size(0)
-    #     N = 2 * batch_size  # Size for concatenated z_i and z_j
-        
-    #     z = torch.cat((z_i, z_j), dim=0)
-    #     z_norm = F.normalize(z, dim=1)
-    #     sim_matrix = torch.mm(z_norm, z_norm.T) / self.temperature
-        
-    #     # Ensure diagonal elements are not selected as negatives
-    #     sim_matrix.fill_diagonal_(-1e9)
-        
-    #     labels = torch.cat([torch.arange(batch_size) for _ in range(2)], dim=0)
-    #     labels = labels.to(self.device)
-        
-    #     # Duplicate labels to match the size of sim_matrix
-    #     labels = torch.cat((labels, labels), dim=0)
-        
-    #     sim_matrix = torch.cat((sim_matrix, sim_matrix), dim=1)
-        
-    #     loss = self.criterion(sim_matrix, labels)
-    #     return loss / (2 * batch_size)
+        return loss / (2 * N) 
     
 
 
