@@ -117,8 +117,8 @@ class Trainer:
 
         # Plot Training and Validation Loss
         plt.subplot(1, 2, 1)
-        plt.plot(epochs, self.train_losses, 'r-', label='Training Loss')
-        plt.plot(epochs, self.validation_losses, 'b-', label='Validation Loss')
+        plt.plot(epochs, self.train_losses, label='Training Loss')
+        plt.plot(epochs, self.validation_losses, label='Validation Loss')
         plt.title('Training and Validation Loss')
         plt.xlabel('Epochs')
         plt.ylabel('Loss')
@@ -167,6 +167,6 @@ if __name__ == '__main__':
     trainer = Trainer(train_loader=train_loader, 
                       validation_loader=validation_loader, 
                       epochs=20)
-    trainer.train()  # Train for 5 epochs
-    trainer.plot_metrics('baseline_metrics.png')  # Plot and save the training and validation loss and accuracy
-    trainer.plot_confusion_matrix()  # Plot and save the confusion matrix
+    trainer.train() 
+    trainer.plot_metrics()
+    trainer.plot_confusion_matrix()

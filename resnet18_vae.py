@@ -1,6 +1,8 @@
+#%%
 import torch
 from torch import nn, optim
 import torch.nn.functional as F
+import torchsummary
 
 class ResizeConv2d(nn.Module):
 
@@ -182,3 +184,4 @@ class VAEClassifier(nn.Module):
         mu, _ = self.encoder(x)
         out = self.mlp(mu)
         return out
+#%%
