@@ -11,15 +11,11 @@ class NTXentLoss(nn.Module):
         self.criterion = nn.CrossEntropyLoss(reduction="sum")
 
     def forward(self, z_i, z_j):
-        print(f"z_i: {z_i.size()}, z_j: {z_j.size()}")
         z = torch.cat((z_i, z_j), dim=0) 
-        print(f"z: {z.size()}")
         N = 2 * self.batch_size  # Corrected size for 2N, Size for concatenated z_i and z_j
 
         z_norm = F.normalize(z, dim=1)
-        print(f"z_norm: {z_norm.size()}")
         sim_matrix = torch.mm(z_norm, z_norm.T) / self.temperature
-        print(f"sim_matrix: {sim_matrix.size()}")
 
         # Create an identity mask to zero-out diagonals
         sim_matrix.fill_diagonal_(-1e9)
@@ -27,9 +23,8 @@ class NTXentLoss(nn.Module):
         labels = torch.cat([torch.arange(self.batch_size) for _ in range(2)], dim=0)
         #labels = (labels + self.batch_size) % (2 * self.batch_size)
         labels = labels.to(self.device)
-        print(f"labels: {labels.size()}")
+
         sim_matrix = torch.cat((sim_matrix, sim_matrix), dim=1)
-        print(f"sim_matrix: {sim_matrix.size()}")
         # Compute cross-entropy loss
         
         loss = self.criterion(sim_matrix, labels)

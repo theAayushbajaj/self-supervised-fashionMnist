@@ -66,7 +66,7 @@ if __name__ == '__main__':
     optimizer = torch.optim.Adam(model.parameters(), lr=3e-4)
 
     # Train model
-    train(model, train_loader, optimizer, loss_fn, epochs=2, device=device)
+    train(model, train_loader, optimizer, loss_fn, epochs=50, device=device)
 
     # Save model
     # save_checkpoint({
