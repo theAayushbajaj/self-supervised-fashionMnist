@@ -58,11 +58,11 @@ if __name__ == '__main__':
 
 
     train_dataset = datasets.FashionMNIST('./data', train=True, download=True, transform=SimCLRTransform())
-    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 
     model = ResNetSimCLR(out_dim=512).to(device)
 
-    loss_fn = NTXentLoss(batch_size=64, temperature=0.5, device=device)
+    loss_fn = NTXentLoss(batch_size=32, temperature=0.5, device=device)
     optimizer = torch.optim.Adam(model.parameters(), lr=3e-4)
 
     # Train model
