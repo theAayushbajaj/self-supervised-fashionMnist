@@ -11,6 +11,7 @@ class NTXentLoss(nn.Module):
         self.criterion = nn.CrossEntropyLoss(reduction="sum")
 
     def forward(self, z_i, z_j):
+        print(z_i.shape, z_j.shape)
         N = 2 * self.batch_size  # Corrected size for 2N
         z = torch.cat((z_i, z_j), dim=0)
 
