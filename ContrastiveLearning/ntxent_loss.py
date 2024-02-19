@@ -11,24 +11,23 @@ class NTXentLoss(nn.Module):
         self.criterion = nn.CrossEntropyLoss(reduction="sum")
 
     def forward(self, z_i, z_j):
-        N = self.batch_size
+        N = 2 * self.batch_size  # Corrected size for 2N
         z = torch.cat((z_i, z_j), dim=0)
 
         z_norm = F.normalize(z, p=2, dim=1)
-        sim_matrix = torch.mm(z_norm, z_norm.transpose(0, 1))
-        #sim_matrix = F.cosine_similarity(z.unsqueeze(1), z.unsqueeze(0), dim=2) / self.temperature
-        sim_matrix = sim_matrix - torch.eye(N, device=self.device) * 1e9
+        sim_matrix = torch.mm(z_norm, z_norm.transpose(0, 1)) / self.temperature
 
-        sim_matrix.fill_diagonal_(-9e15)
+        # Create an identity mask to zero-out diagonals
+        mask = torch.eye(N, device=self.device)
+        sim_matrix = sim_matrix.masked_fill(mask == 1, -1e9)
 
-        # Create positive pairs, with main diagonal elements being the ground truth (where i=j)
-        positives = torch.exp(sim_matrix / self.temperature)
-        #positives = torch.exp(torch.sum(z_i * z_j, dim=1) / self.temperature)
-        negatives = torch.sum(torch.exp(sim_matrix / self.temperature), dim=1)
+        # Labels for cross-entropy: each sample should match to its pair
+        labels = torch.cat([torch.arange(self.batch_size) for _ in range(2)], dim=0)
+        labels = (labels + self.batch_size) % (2 * self.batch_size)
+        labels = labels.to(self.device)
 
-        loss_per_sample = -torch.log(positives / negatives)
-
-        loss = torch.sum(loss_per_sample) / (self.batch_size)
-        return loss
+        # Compute cross-entropy loss
+        loss = self.criterion(sim_matrix, labels)
+        return loss / (2 * self.batch_size)
 
 
