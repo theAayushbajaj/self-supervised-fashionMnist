@@ -33,7 +33,6 @@ def train(model, train_loader, optimizer, loss_fn, epochs, device):
         model.train()
         total_loss = 0
         for (x_i, x_j), _ in tqdm(train_loader, desc=f'Epoch {epoch+1}/{epochs}', unit='batch'):
-            print(x_i.shape, x_j.shape)
             x_i, x_j = x_i.to(device), x_j.to(device)
 
             # Forward pass
