@@ -21,9 +21,9 @@ class ResNetSimCLR(nn.Module):
         self.resnet.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3, bias=False)
 
         dim_mlp = self.resnet.fc.in_features
-        self.resnet.fc = nn.Identity()
+        #self.resnet.fc = nn.Identity()
 
-        self.projection_head = ProjectionHead(in_dim=dim_mlp, out_dim=out_dim)
+        self.projection_head = nn.Sequential(nn.Linear(dim_mlp, dim_mlp), nn.ReLU(), self.resnet.fc)
 
     def forward(self, x_i, x_j):
         h_i = self.resnet(x_i)
