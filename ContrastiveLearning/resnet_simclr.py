@@ -18,6 +18,7 @@ class ResNetSimCLR(nn.Module):
     def __init__(self, out_dim=128):
         super(ResNetSimCLR, self).__init__()
         self.resnet = models.resnet18(weights=None)
+        self.resnet.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3, bias=False)
 
         dim_mlp = self.resnet.fc.in_features
         self.resnet.fc = nn.Identity()
