@@ -47,7 +47,7 @@ def train(model, train_loader, optimizer, loss_fn, epochs, device):
             total_loss += loss.item()
 
         avg_loss = total_loss / len(train_loader)
-        print(f'Epoch [{epoch+1}/{epochs}]: Average Loss: {avg_loss:.4f}')
+        print(f'Average Loss: {avg_loss:.4f}')
 
 if __name__ == '__main__':
     # Set random seeds and device

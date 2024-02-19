@@ -20,12 +20,10 @@ class NTXentLoss(nn.Module):
         # Create an identity mask to zero-out diagonals
         sim_matrix.fill_diagonal_(-1e9)
 
-        labels = torch.cat([torch.arange(self.batch_size) for _ in range(2)], dim=0)
-        #labels = (labels + self.batch_size) % (2 * self.batch_size)
-        labels = labels.to(self.device)
+        labels = torch.arange(N, device=self.device)
+        labels = torch.cat((labels, labels), dim=0) % N
 
         sim_matrix = torch.cat((sim_matrix, sim_matrix), dim=1)
-        # Compute cross-entropy loss
         
         loss = self.criterion(sim_matrix, labels)
         return loss / (2 * self.batch_size)

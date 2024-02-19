@@ -45,8 +45,7 @@ class ConvEncoderClassifier(nn.Module):
         self.encoder = encoder
         for param in self.encoder.parameters():
             param.requires_grad = False
-        
-        # Assuming encoder output is 64-dimensional
+
         self.classifier = nn.Sequential(
             nn.Linear(64, 128),
             nn.ReLU(True),
@@ -55,7 +54,7 @@ class ConvEncoderClassifier(nn.Module):
         )
 
     def forward(self, x):
-        x = self.encoder(x)  # Encoded representations
+        x = self.encoder(x) 
         x = torch.flatten(x, 1) 
         x = self.classifier(x)
         return x
@@ -106,16 +105,6 @@ class AutoencoderTrainer:
             print(f'Epoch {epoch + 1}/{self.epochs}')
             self.train_epoch()
             self.validate()
-
-    # def plot_metrics(self):
-    #     plt.figure(figsize=(10, 5))
-    #     plt.plot(self.train_losses, label='Train Loss')
-    #     plt.plot(self.val_losses, label='Validation Loss')
-    #     plt.title('Loss over epochs')
-    #     plt.xlabel('Epochs')
-    #     plt.ylabel('Loss')
-    #     plt.legend()
-    #     plt.show()
 
 
 class ClassifierTrainer:
