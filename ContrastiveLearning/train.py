@@ -47,7 +47,7 @@ class SimCLREncoderClassifier(nn.Module):
             param.requires_grad = False
 
         # Assuming the feature dimension from the encoder
-        feature_dim = simclr_model.resnet.fc.in_features
+        feature_dim = 512
 
         # Classification head
         self.classifier = nn.Sequential(
