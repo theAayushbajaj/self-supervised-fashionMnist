@@ -186,7 +186,7 @@ if __name__ == "__main__":
     optimizer_simclr = optim.Adam(model_simclr.parameters(), lr=3e-4)
     loss_fn_simclr = NTXentLoss(temperature=0.5, device=device)
 
-    simclr_trainer = SimCLRTrainer(model_simclr, train_loader, optimizer_simclr, loss_fn_simclr, epochs=2)
+    simclr_trainer = SimCLRTrainer(model_simclr, train_loader, optimizer_simclr, loss_fn_simclr, epochs=10)
     simclr_trainer.train()
 
 
@@ -201,6 +201,6 @@ if __name__ == "__main__":
 
     simclr_classifier = SimCLREncoderClassifier(model_simclr, num_classes=10).to(device)  # Assume this is defined correctly
 
-    classifier_trainer = ClassifierTrainer(simclr_classifier, train_loader_subset, validation_loader, epochs=2)
+    classifier_trainer = ClassifierTrainer(simclr_classifier, train_loader_subset, validation_loader, epochs=10)
     classifier_trainer.train()
     classifier_trainer.plot_metrics()
