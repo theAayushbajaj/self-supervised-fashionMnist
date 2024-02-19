@@ -14,7 +14,9 @@ class NTXentLoss(nn.Module):
         N = 2 * self.batch_size
         z = torch.cat((z_i, z_j), dim=0)
 
-        sim_matrix = F.cosine_similarity(z.unsqueeze(1), z.unsqueeze(0), dim=2) / self.temperature
+        z_norm = F.normalize(z, p=2, dim=1)
+        sim_matrix = torch.mm(z_norm, z_norm.transpose(0, 1)) / self.temperature
+        #sim_matrix = F.cosine_similarity(z.unsqueeze(1), z.unsqueeze(0), dim=2) / self.temperature
         sim_matrix = sim_matrix - torch.eye(N, device=self.device) * 1e9
 
         sim_matrix.fill_diagonal_(-9e15)
