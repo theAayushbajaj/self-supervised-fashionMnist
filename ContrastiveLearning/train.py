@@ -61,7 +61,7 @@ class SimCLREncoderClassifier(nn.Module):
 
     
 class SimCLRTrainer:
-    def __init__(self, model, train_loader, optimizer, loss_fn, epochs, device):
+    def __init__(self, model, train_loader, optimizer, loss_fn, epochs):
         self.model = model
         self.train_loader = train_loader
         self.optimizer = optimizer
@@ -92,7 +92,7 @@ class SimCLRTrainer:
             self.train_epoch()
 
 class ClassifierTrainer:
-    def __init__(self, model, train_loader, val_loader, epochs, device):
+    def __init__(self, model, train_loader, val_loader, epochs):
         self.model = model.to(device)
         self.train_loader = train_loader
         self.val_loader = val_loader
