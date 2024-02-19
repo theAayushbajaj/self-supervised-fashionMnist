@@ -3,9 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class NTXentLoss(nn.Module):
-    def __init__(self, batch_size, temperature, device):
+    def __init__(self, temperature, device):
         super(NTXentLoss, self).__init__()
-        self.batch_size = batch_size
         self.temperature = temperature
         self.device = device
         self.criterion = nn.CrossEntropyLoss(reduction="sum")

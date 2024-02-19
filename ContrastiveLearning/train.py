@@ -181,7 +181,7 @@ if __name__ == "__main__":
 
     model_simclr = ResNetSimCLR(out_dim=512).to(device) 
     optimizer_simclr = optim.Adam(model_simclr.parameters(), lr=3e-4)
-    loss_fn_simclr = NTXentLoss(batch_size=32, temperature=0.5, device=device)
+    loss_fn_simclr = NTXentLoss(temperature=0.5, device=device)
 
     simclr_trainer = SimCLRTrainer(model_simclr, train_loader, optimizer_simclr, loss_fn_simclr, epochs=2)
     simclr_trainer.train()
