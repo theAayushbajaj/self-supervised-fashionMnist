@@ -42,11 +42,12 @@ class SimCLREncoderClassifier(nn.Module):
     def __init__(self, simclr_model, num_classes=10):
         super(SimCLREncoderClassifier, self).__init__()
         self.simclr_encoder = simclr_model.resnet 
+        
         for param in self.simclr_encoder.parameters():
             param.requires_grad = False
 
         # Assuming the feature dimension from the encoder
-        feature_dim = simclr_model.resnet.fc.in_features
+        feature_dim = simclr_model.projection_head.fc.in_features
 
         # Classification head
         self.classifier = nn.Sequential(
