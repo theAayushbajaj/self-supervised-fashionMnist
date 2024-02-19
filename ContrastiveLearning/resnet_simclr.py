@@ -23,11 +23,11 @@ class ResNetSimCLR(nn.Module):
         dim_mlp = self.resnet.fc.in_features
         #self.resnet.fc = nn.Identity()
 
-        self.projection_head = nn.Sequential(nn.Linear(dim_mlp, dim_mlp), nn.ReLU(), self.resnet.fc)
+        self.resnet.fc = nn.Sequential(nn.Linear(dim_mlp, dim_mlp), nn.ReLU(), self.resnet.fc)
 
     def forward(self, x_i, x_j):
-        h_i = self.resnet(x_i)
-        h_j = self.resnet(x_j)
-        z_i = self.projection_head(h_i)
-        z_j = self.projection_head(h_j)
+        z_i = self.resnet(x_i)
+        z_j = self.resnet(x_j)
+        #z_i = self.projection_head(h_i)
+        #z_j = self.projection_head(h_j)
         return z_i, z_j
