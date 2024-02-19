@@ -14,6 +14,7 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 from ntxent_loss import NTXentLoss
 from resnet_simclr import ResNetSimCLR
+from utils import create_subset
 
 torch.manual_seed(42)
 np.random.seed(42)
@@ -188,12 +189,15 @@ if __name__ == "__main__":
     simclr_trainer = SimCLRTrainer(model_simclr, train_loader, optimizer_simclr, loss_fn_simclr, epochs=2)
     simclr_trainer.train()
 
-    subset_indices = torch.randperm(len(train_dataset))[:int(0.1 * len(train_dataset))]
-    subset_dataset = Subset(train_dataset, subset_indices)
-    train_loader_subset = DataLoader(subset_dataset, batch_size=64, shuffle=True)
 
-    validation_dataset = datasets.FashionMNIST('./data', train=False, download=True, transform=transforms.ToTensor())
-    validation_loader = DataLoader(validation_dataset, batch_size=64, shuffle=False)
+    # Classifier training setup
+    training_set = datasets.FashionMNIST('./data', train=True, download=True, transform=transforms.ToTensor())
+    validation_set = datasets.FashionMNIST('./data', train=False, download=True, transform=transforms.ToTensor())
+
+    subset_training_set = create_subset(training_set, subset_size=0.1)
+    
+    train_loader_subset = DataLoader(subset_training_set, batch_size=64, shuffle=True)
+    validation_loader = DataLoader(validation_set, batch_size=64, shuffle=False)
 
     simclr_classifier = SimCLREncoderClassifier(model_simclr, num_classes=10).to(device)  # Assume this is defined correctly
 
