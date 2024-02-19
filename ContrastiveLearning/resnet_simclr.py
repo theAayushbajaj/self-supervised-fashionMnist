@@ -25,7 +25,9 @@ class ResNetSimCLR(nn.Module):
 
         self.projection_head = ProjectionHead(in_dim=dim_mlp, out_dim=out_dim)
 
-    def forward(self, x):
-        h = self.resnet(x)
-        z = self.projection_head(h)
-        return z
+    def forward(self, x_i, x_j):
+        h_i = self.resnet(x_i)
+        h_j = self.resnet(x_j)
+        z_i = self.projection_head(h_i)
+        z_j = self.projection_head(h_j)
+        return z_i, z_j
