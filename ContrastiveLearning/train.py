@@ -179,7 +179,7 @@ class ClassifierTrainer:
 
 if __name__ == "__main__":
     # SimCLR model training setup
-    train_dataset = datasets.FashionMNIST('./data', train=True, download=True, transform=SimCLRTransform())
+    train_dataset = datasets.FashionMNIST('../data', train=True, download=True, transform=SimCLRTransform())
     train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 
     model_simclr = ResNetSimCLR(out_dim=512).to(device) 
@@ -191,8 +191,8 @@ if __name__ == "__main__":
 
 
     # Classifier training setup
-    training_set = datasets.FashionMNIST('./data', train=True, download=True, transform=transforms.ToTensor())
-    validation_set = datasets.FashionMNIST('./data', train=False, download=True, transform=transforms.ToTensor())
+    training_set = datasets.FashionMNIST('../data', train=True, download=True, transform=transforms.ToTensor())
+    validation_set = datasets.FashionMNIST('../data', train=False, download=True, transform=transforms.ToTensor())
 
     subset_training_set = create_subset(training_set, subset_size=0.1)
     
