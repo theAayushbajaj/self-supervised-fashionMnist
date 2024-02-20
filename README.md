@@ -9,6 +9,18 @@ $ conda env create --name ssl-representations --file environment.yml
 $ conda activate ssl-representations
 ```
 
+## Baseline Supervised
+
+We first establish a baseline by training a simple CNN on the entire FashionMNIST dataset. The model is trained using the standard cross-entropy loss and evaluated on the test set.
+
+To reproduce the results run: 
+```python
+$ python supervised_baseline.py
+```
+and the artifacts for visualizing the training and validation metrics are saved in the assets folder.
+
+![Train and Val Metrics](assets/baseline_train_val_metrics.png)
+
 ## Convolutional Autoencoder for SSL
 
 ### Unsupervised Pretraining 
@@ -23,6 +35,7 @@ To reproduce the results run:
 $ python conv_ae_mlp_finetune.py
 
 ```
+and the artifacts for visualizing the training and validation metrics are saved in the assets folder.
 
 <!-- attach image from assets -->
 ![Train and Val Metrics](assets/conv_ae_mlp_train_val_metrics.png)
@@ -49,5 +62,6 @@ To reproduce the results run:
 $ cd ContrastiveLearning
 $ python train.py
 ```
+and the artifacts for visualizing the training and validation metrics are saved in the assets folder.
 
 ![Train and Val Metrics](assets/SimCLR_training_val_metrics.png)
