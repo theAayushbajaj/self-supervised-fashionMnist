@@ -166,7 +166,7 @@ if __name__ == '__main__':
     # Initialize our trainer and start training
     trainer = Trainer(train_loader=train_loader, 
                       validation_loader=validation_loader, 
-                      epochs=20)
+                      epochs=10)
     trainer.train() 
     trainer.plot_metrics()
     trainer.plot_confusion_matrix()
